@@ -1,0 +1,5 @@
+HEBB = 0
+OJA = 1
+
+SYNC = 0
+ASYNC = 1
