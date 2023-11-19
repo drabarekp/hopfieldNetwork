@@ -1,9 +1,10 @@
-from Loader import *
 from HopfieldNetwork import *
 
+
+# to be moved to Jupyter notebook
 def sample():
-    patterns = load('large-25x25.csv')
-    hn = HopfieldNetwork(25*25, OJA)
+    patterns = load_csv('large-25x25.csv')
+    hn = HopfieldNetwork(25 * 25, OJA)
     hn.load_patterns_and_learn(patterns)
 
     hn.draw_neurons(25, 25)
@@ -13,9 +14,9 @@ def sample():
     hn.draw_neurons(25, 25)
     hn.draw_weights()
 
-    #for i in range(len(patterns)):
+    # for i in range(len(patterns)):
     #    hn.draw(patterns[i], 25, 25)
+
 
 if __name__ == '__main__':
     sample()
-
