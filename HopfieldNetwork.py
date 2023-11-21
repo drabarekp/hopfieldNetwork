@@ -103,7 +103,8 @@ class HopfieldNetwork:
             else:
                 new_neurons[i] = -1
         self.neurons = new_neurons
-        # self.states.append(copy.deepcopy(self.neurons))
+
+        self.states.append(copy.deepcopy(self.neurons))
         # plot_dataset(self.states, self.size, enum=True)
 
     # updates fraction of neurons given by fraction_updated
@@ -113,8 +114,7 @@ class HopfieldNetwork:
                 self.update_one()
 
             self.states.append(copy.deepcopy(self.neurons))
-        plot_dataset(self.states, self.size, enum=True)
-
+        # plot_dataset(self.states, self.size, enum=True)
         # numbers = self.length * fraction_updated
         # for _ in range(int(numbers)):
         #     self.update_one()
