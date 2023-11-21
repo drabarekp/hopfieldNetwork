@@ -1,4 +1,7 @@
 import copy
+
+import numpy as np
+
 from dataManager import *
 
 
@@ -7,9 +10,9 @@ class HopfieldNetwork:
     def __init__(self, size, learning):
         self.size = size  # 2-tuple
         self.length = size[0] * size[1]
-        self.patterns = []
-        self.neurons = np.zeros(self.length)
-        self.weights = np.zeros((self.length, self.length))
+        self.patterns = []  # np.full((0, 0), 0.0)
+        self.neurons = np.zeros(self.length, dtype='float16')
+        self.weights = np.zeros((self.length, self.length), dtype='float16')
 
         self.energies = []
         self.calc_energy()
@@ -26,12 +29,13 @@ class HopfieldNetwork:
 
     # no parameters reset implemented - use this function one time only!
     def load_patterns_and_learn(self, patterns, eta=0.001, iterations=100):
-        self.patterns = patterns
-        self.learning_func(patterns, eta, iterations)
+        self.patterns = np.array(patterns)
+        self.learning_func(self.patterns, eta, iterations)
 
     def hebb(self, patterns, eta=None, iterations=None):  # , collect=True, plot=True):
-        patterns = np.array(patterns)
-        self.weights = (patterns.T @ patterns) / self.length
+        # patterns = np.array(patterns)
+        self.weights = (patterns.T @ patterns) / len(patterns)  # self.length
+        # print('finished')
         for i in range(self.length):
             self.weights[i][i] = 0.0
 
@@ -41,12 +45,30 @@ class HopfieldNetwork:
         #     self.draw_learning()
 
     def oja(self, patterns, eta, iterations):  # , collect=True, plot=True):
-        self.hebb(patterns)  # , collect=True, plot=False)
-        V = np.sum(self.weights * self.neurons)
+        # self.hebb(patterns)  # , collect=True, plot=False)
+        # self.weights = np.zeros((self.length, self.length))
+        # new_weights = np.zeros((self.length, self.length))
 
-        for i in range(iterations):
-            neurons_matrix = np.array([np.full(self.length, self.neurons[i]) for i in range(self.length)])
-            self.weights = self.weights + eta * V * (neurons_matrix - V * self.weights)
+        self.weights = np.float16(np.random.uniform(-1, 1, size=(self.length, self.length)))
+        for it in range(iterations):
+            old_weights = copy.deepcopy(self.weights)
+
+            for i in range(self.length):
+                for j in range(self.length):
+                    self.weights[i][j] = (1 - eta) * self.weights[i][j] + eta * np.sum(
+                        patterns[:, j] * (patterns[:, i] - patterns[:, j] * self.weights[i][j])) / len(patterns)
+                # print(i)
+                self.weights[i][i] = 0.0
+
+            n_sc = np.linalg.norm(old_weights - self.weights)
+            # print(n_sc)
+            if n_sc < 1E-10:
+                break
+        # V = np.sum(self.weights * self.neurons)
+        #
+        # for i in range(iterations):
+        #     neurons_matrix = np.array([np.full(self.length, self.neurons[i]) for i in range(self.length)])
+        #     self.weights = self.weights + eta * V * (neurons_matrix - V * self.weights)
 
         # if collect:
         #     self.learning.append(copy.deepcopy(self.weights))
@@ -63,7 +85,7 @@ class HopfieldNetwork:
             self.neurons[index] = -1
 
     def update_all(self):
-        new_neurons = np.zeros(self.length)
+        new_neurons = np.zeros(self.length, dtype='float16')
         for index in range(self.length):
             activation = np.sum(self.weights[index, :] * self.neurons)
             if activation > 0:
@@ -76,15 +98,13 @@ class HopfieldNetwork:
         new_neurons = self.neurons.copy()
         for i in range(self.length):
             activation = np.dot(self.weights[i, :], self.neurons)
-
             if activation > 0:
                 new_neurons[i] = 1
             else:
                 new_neurons[i] = -1
-
         self.neurons = new_neurons
-        self.states.append(copy.deepcopy(self.neurons))
-        plot_dataset(self.states, self.size, enum=True)
+        # self.states.append(copy.deepcopy(self.neurons))
+        # plot_dataset(self.states, self.size, enum=True)
 
     # updates fraction of neurons given by fraction_updated
     def update_async(self, fraction_updated):
@@ -119,10 +139,10 @@ class HopfieldNetwork:
 
     def report_score(self):
         score, visualisations = self.calc_score()
-        stabilities = np.count_nonzero(score == 1)
+        stabilities = np.count_nonzero(np.abs(np.subtract(score, 1)) < 1E-8)
         avg_score = np.mean(score)
 
-        return avg_score, stabilities, visualisations
+        return score, avg_score, stabilities, visualisations
 
     def draw_neurons(self):
         plot_pattern(self.neurons, self.size)
