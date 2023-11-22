@@ -11,7 +11,7 @@ def load_csv(filename):
     with open(PATTERN_PATH + filename, newline='') as csvfile:
         data_reader = csv.reader(csvfile, delimiter=',', quoting=csv.QUOTE_NONNUMERIC)
         for row in data_reader:
-            result.append(np.array(row))
+            result.append(np.array(row, dtype='float16'))
     return result
 
 
@@ -33,7 +33,7 @@ def export_pictures(in_path, in_names, out_path, out_name):
 
 
 def damage_pattern(pattern, error):
-    noise = np.random.choice([1, -1], size=len(pattern), p=[1 - error, error])
+    noise = np.float16(np.random.choice([1, -1], size=len(pattern), p=[1 - error, error]))
     return np.multiply(pattern, noise)
 
 
@@ -43,7 +43,7 @@ def plot_pattern(pattern, size):
 
 
 def plot_dataset(dataset, size, enum=False):
-    plt.figure(figsize=[20, 5 * int(np.ceil(len(dataset) / 4))])
+    plt.figure(figsize=[min(5 * len(dataset), 20), 5 * int(np.ceil(len(dataset) / 4))])
     for pattern in range(len(dataset)):
         plt.subplot(int(np.ceil(len(dataset) / 4)), 4, pattern + 1)
         if enum:
